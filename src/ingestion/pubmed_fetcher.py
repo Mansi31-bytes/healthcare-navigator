@@ -99,5 +99,7 @@ class PubMedFetcher:
             return None
 
     def fetch_by_query(self, query: str, max_results: int = 50) -> list:
+        import time
         pmids = self.search(query, max_results)
+        time.sleep(1)
         return self.fetch_details(pmids)
