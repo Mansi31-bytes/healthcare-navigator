@@ -22,7 +22,8 @@ class HybridRetriever:
     ):
         logger.info(f"Loading embedding model: {embedding_model}")
         self.embedder = SentenceTransformer(embedding_model)
-        self.reranker = CrossEncoder(reranker_model)
+        self.reranker = None
+        self._reranker_model = reranker_model
         self.faiss_path = faiss_path
         self.bm25_path = bm25_path
         self.chunks_path = chunks_path
@@ -80,6 +81,9 @@ class HybridRetriever:
         candidate_idxs = list(dense_hits | sparse_hits)
         candidates = [self.chunks[i] for i in candidate_idxs if i < len(self.chunks)]
         pairs = [[query, c.text] for c in candidates]
+        if self.reranker is None:
+            from sentence_transformers import CrossEncoder
+            self.reranker = CrossEncoder(self._reranker_model)
         rerank_scores = self.reranker.predict(pairs)
         scored = sorted(
             zip(candidates, rerank_scores), key=lambda x: x[1], reverse=True
