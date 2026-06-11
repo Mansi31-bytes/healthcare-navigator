@@ -1,5 +1,5 @@
 sentence-transformers==2.7.0
-faiss-cpu==1.8.0
+faiss-cpu
 rank-bm25==0.2.2
 requests==2.31.0
 xmltodict==0.13.0
