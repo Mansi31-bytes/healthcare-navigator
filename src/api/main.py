@@ -5,6 +5,9 @@ from pydantic import BaseModel
 from loguru import logger
 from dotenv import load_dotenv
 
+from src.ingestion.pdf_ingester import PDFIngester
+from fastapi import UploadFile, File, Form
+import tempfile
 from src.ingestion.pubmed_fetcher import PubMedFetcher
 from src.ingestion.chunker import MedicalChunker
 from src.retrieval.retriever import HybridRetriever
@@ -81,6 +84,36 @@ async def ingest_literature(req: IngestRequest):
         "status": "ok",
         "documents_ingested": len(all_docs),
         "chunks_indexed": len(chunks),
+    }
+
+@app.post("/ingest/pdf")
+async def ingest_pdf(
+    file: UploadFile = File(...),
+    title: str = Form(default=""),
+    source: str = Form(default=""),
+):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    contents = await file.read()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(contents)
+        tmp_path = tmp.name
+
+    ingester = PDFIngester()
+    new_chunks = ingester.ingest(tmp_path, title=title, source=source)
+
+    if not new_chunks:
+        raise HTTPException(status_code=400, detail="No text could be extracted from PDF.")
+
+    all_chunks = retriever.chunks + new_chunks
+    retriever.build_index(all_chunks)
+
+    return {
+        "status": "ok",
+        "filename": file.filename,
+        "new_chunks": len(new_chunks),
+        "total_chunks": len(all_chunks),
     }
 
 @app.get("/health")
