@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: healthcare-navigator
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: EMBEDDING_MODEL
+        value: all-MiniLM-L6-v2
+      - key: RERANKER_MODEL
+        value: cross-encoder/ms-marco-MiniLM-L-6-v2
+      - key: TOP_K_DENSE
+        value: 20
+      - key: TOP_K_BM25
+        value: 20
+      - key: TOP_K_RERANKED
+        value: 5
+      - key: CHUNK_SIZE
+        value: 400
+      - key: CHUNK_OVERLAP
+        value: 50
+      - key: FAISS_INDEX_PATH
+        value: ./data/indexes/faiss.index
+      - key: BM25_PATH
+        value: ./data/indexes/bm25.pkl
+      - key: CHUNKS_PATH
+        value: ./data/indexes/chunks.pkl
