@@ -80,10 +80,14 @@ class HybridRetriever:
         sparse_hits = set(bm25_top.tolist())
         candidate_idxs = list(dense_hits | sparse_hits)
         candidates = [self.chunks[i] for i in candidate_idxs if i < len(self.chunks)]
+        import os
+        if os.getenv("DISABLE_RERANKER", "false").lower() == "true":
+            scored = [(c, 1.0) for c in candidates[:self.top_k_reranked]]
+        else:
+             if self.reranker is None:
+                 from sentence_transformers import CrossEncoder
+                 self.reranker = CrossEncoder(self._reranker_model)
         pairs = [[query, c.text] for c in candidates]
-        if self.reranker is None:
-            from sentence_transformers import CrossEncoder
-            self.reranker = CrossEncoder(self._reranker_model)
         rerank_scores = self.reranker.predict(pairs)
         scored = sorted(
             zip(candidates, rerank_scores), key=lambda x: x[1], reverse=True
