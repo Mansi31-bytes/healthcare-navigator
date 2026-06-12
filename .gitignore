@@ -1,7 +1,5 @@
 venv/
 .env
-data/indexes/
 __pycache__/
 *.pyc
-*.pkl
-*.index
+
